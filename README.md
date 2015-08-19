@@ -29,7 +29,28 @@ If you want to track an event, use:
   
 If you want to add custom properties, use:
 
-    NSDictionary *properties = [NSDictionary dictionaryWithObjectsAndKeys:[[UIDevice currentDevice] model], @"Device Model", nil];
+    NSDictionary *properties = [NSDictionary dictionaryWithObjectsAndKeys:
+      [[UIDevice currentDevice] model], 
+      @"Device Model", 
+      nil];
     [mixpanellite track:@"App Launched" properties:properties];
     
-  
+If you want to set some user profile properties, use:
+
+    // First ever run date time
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"UTC"]];
+    [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ss"];
+    NSString *nowDateString = [dateFormatter stringFromDate:[NSDate date]];
+    NSDictionary *setOnceProperties = [NSDictionary dictionaryWithObjectsAndKeys:nowDateString, @"First Launched", nil];
+    [mixpanellite identifySetOnce:setOnceProperties];
+    
+    // Last Launch
+    NSDictionary *setProperties = [NSDictionary dictionaryWithObjectsAndKeys:nowDateString, @"Last Launched", nil];
+    [mixpanellite identifySet:setProperties];
+    
+    // Increment Run Count
+    NSDictionary *addProperties = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInt:1], @"Launch Count", nil];
+    [mixpanellite identifyAdd:addProperties];
+ 
+ 
