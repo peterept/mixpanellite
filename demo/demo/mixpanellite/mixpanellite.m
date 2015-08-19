@@ -9,11 +9,14 @@
 
 #define MIXPANELLITE_TOKEN @"MY_TOKEN"
 
+
 @implementation mixpanellite
+
 
 +(void)track:(NSString*)event {
     return [mixpanellite track:event properties:nil];
 }
+
 
 +(void)track:(NSString*)event properties:(NSDictionary*)properties {
     
@@ -23,17 +26,30 @@
     }
     NSMutableDictionary *eventDict = [NSMutableDictionary dictionaryWithObjectsAndKeys:event,@"event", allProperties, @"properties", nil];
     
-    NSError *error = nil;
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:eventDict options:0 error:&error];
-    if (error == nil)
-    {
-        NSLog(@"[MIXPANELLITE] %@", [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding]);
+    [mixpanellite mixPanelHttpEndpoint:@"track" data:eventDict];
+}
+
+
++(void)identifySetOnce:(NSDictionary*)properties {
+    [mixpanellite identifyUpdate:@"$set_once" properties:properties];
+}
+
+
++(void)identifySet:(NSDictionary*)properties {
+    [mixpanellite identifyUpdate:@"$set" properties:properties];
+}
+
+
++(void)identifyAdd:(NSDictionary*)properties {
+    [mixpanellite identifyUpdate:@"$add" properties:properties];
+}
+
+
++(void)identifyUpdate:(NSString*)operation properties:(NSDictionary*)properties {
+
+    NSMutableDictionary *eventDict = [NSMutableDictionary dictionaryWithObjectsAndKeys:[mixpanellite distinctIdentifier],@"$distinct_id", MIXPANELLITE_TOKEN, @"$token", properties, operation, nil];
     
-        NSString *urlTemplate = @"http://api.mixpanel.com/track/?data=%@";
-        NSString *url = [NSString stringWithFormat:urlTemplate, [jsonData mp_base64EncodedString]];
-        NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
-        [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:nil];
-    }
+    [mixpanellite mixPanelHttpEndpoint:@"engage" data:eventDict];
 }
 
 
@@ -50,5 +66,22 @@
     }
     return UUID;
 }
+
+
++(void)mixPanelHttpEndpoint:(NSString*)endpoint data:(NSDictionary*)data {
+    
+    NSError *error = nil;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:data options:0 error:&error];
+    if (error == nil)
+    {
+        NSLog(@"[MIXPANELLITE] %@ %@", endpoint, [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding]);
+        
+        NSString *urlTemplate = @"http://api.mixpanel.com/%@/?data=%@";
+        NSString *url = [NSString stringWithFormat:urlTemplate, endpoint, [jsonData mp_base64EncodedString]];
+        NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
+        [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:nil];
+    }
+}
+
 
 @end
